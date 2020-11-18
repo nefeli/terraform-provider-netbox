@@ -8,6 +8,7 @@ import (
 	"github.com/go-openapi/runtime"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"strconv"
+	"strings"
 )
 
 func resourceNetboxInterface() *schema.Resource {
@@ -25,6 +26,10 @@ func resourceNetboxInterface() *schema.Resource {
 			"virtual_machine_id": &schema.Schema{
 				Type:     schema.TypeInt,
 				Required: true,
+			},
+			"mac_address": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
 			},
 			"description": &schema.Schema{
 				Type:     schema.TypeString,
@@ -51,11 +56,16 @@ func resourceNetboxInterfaceCreate(d *schema.ResourceData, m interface{}) error 
 	name := d.Get("name").(string)
 	virtualMachineID := int64(d.Get("virtual_machine_id").(int))
 	description := d.Get("description").(string)
+	macAddress := d.Get("mac_address").(string)
+	if macAddress != "" {
+		macAddress = strings.ToUpper(macAddress)
+	}
 	tags, _ := getNestedTagListFromResourceDataSet(api, d.Get("tags"))
 
 	data := models.WritableVMInterface{
 		Name:           &name,
 		Description:    description,
+		MacAddress:     &macAddress,
 		VirtualMachine: &virtualMachineID,
 		Tags:           tags,
 		TaggedVlans:    []int64{},
@@ -94,6 +104,7 @@ func resourceNetboxInterfaceRead(d *schema.ResourceData, m interface{}) error {
 
 	d.Set("name", res.GetPayload().Name)
 	d.Set("virtual_machine_id", res.GetPayload().VirtualMachine.ID)
+	d.Set("mac_address", res.GetPayload().MacAddress)
 	d.Set("description", res.GetPayload().Description)
 	d.Set("tags", getTagListFromNestedTagList(res.GetPayload().Tags))
 	return nil
@@ -107,11 +118,16 @@ func resourceNetboxInterfaceUpdate(d *schema.ResourceData, m interface{}) error 
 	name := d.Get("name").(string)
 	virtualMachineID := int64(d.Get("virtual_machine_id").(int))
 	description := d.Get("description").(string)
+	macAddress := d.Get("mac_address").(string)
+	if macAddress != "" {
+		macAddress = strings.ToUpper(macAddress)
+	}
 	tags, _ := getNestedTagListFromResourceDataSet(api, d.Get("tags"))
 
 	data := models.WritableVMInterface{
 		Name:           &name,
 		Description:    description,
+		MacAddress:     &macAddress,
 		VirtualMachine: &virtualMachineID,
 		Tags:           tags,
 		TaggedVlans:    []int64{},

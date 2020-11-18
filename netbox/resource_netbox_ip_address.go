@@ -28,6 +28,19 @@ func resourceNetboxIPAddress() *schema.Resource {
 				Type:     schema.TypeInt,
 				Optional: true,
 			},
+			"role": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+				// ValidateFunc: validation.StringInSlice([]string{"loopback", "secondary", "anycast", "vip", "vrrp", "hsrp", "glbp", "carp"}, false),
+			},
+			"dns_name": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+			},
+			"description": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+			},
 			"status": &schema.Schema{
 				Type:         schema.TypeString,
 				Required:     true,
@@ -54,6 +67,9 @@ func resourceNetboxIPAddressCreate(d *schema.ResourceData, m interface{}) error 
 	data := models.WritableIPAddress{}
 	ipAddress := d.Get("ip_address").(string)
 	data.Address = &ipAddress
+	data.Role = d.Get("role").(string)
+	data.Description = d.Get("description").(string)
+	data.DNSName = d.Get("dns_name").(string)
 	data.Status = d.Get("status").(string)
 
 	data.Tags, _ = getNestedTagListFromResourceDataSet(api, d.Get("tags"))
@@ -97,6 +113,9 @@ func resourceNetboxIPAddressRead(d *schema.ResourceData, m interface{}) error {
 
 	d.Set("ip_address", res.GetPayload().Address)
 	d.Set("status", res.GetPayload().Status.Value)
+	d.Set("role", res.GetPayload().Role)
+	d.Set("description", res.GetPayload().Description)
+	d.Set("dns_name", res.GetPayload().DNSName)
 	d.Set("tags", getTagListFromNestedTagList(res.GetPayload().Tags))
 	return nil
 }
@@ -108,9 +127,15 @@ func resourceNetboxIPAddressUpdate(d *schema.ResourceData, m interface{}) error 
 	data := models.WritableIPAddress{}
 
 	ipAddress := d.Get("ip_address").(string)
+	role := d.Get("role").(string)
+	description := d.Get("description").(string)
+	dnsName := d.Get("dns_name").(string)
 	status := d.Get("status").(string)
 
 	data.Status = status
+	data.Role = role
+	data.Description = description
+	data.DNSName = dnsName
 	data.Address = &ipAddress
 
 	if interfaceID, ok := d.GetOk("interface_id"); ok {
